@@ -1,0 +1,33 @@
+{
+    "name": "xplane-proxy",
+    "version": "1.0.0",
+    "description": "Expose X-Plane's local-only WebSocket API on your local network so any machine can connect to it",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://gitlab.com/cockpitconnect/xplane-proxy.git"
+    },
+    "scripts": {
+        "dev": "tsx src/main.ts",
+        "build:exe": "node build-sea.mjs",
+        "lint": "eslint src",
+        "lint:fix": "eslint src --fix",
+        "format": "prettier --write src",
+        "format:check": "prettier --check src"
+    },
+    "dependencies": {
+        "ws": "^8.20.1"
+    },
+    "devDependencies": {
+        "@types/node": "^25.9.1",
+        "@types/ws": "^8.18.1",
+        "esbuild": "^0.25.0",
+        "eslint": "^10.4.0",
+        "eslint-config-prettier": "^10.1.8",
+        "postject": "1.0.0-alpha.6",
+        "prettier": "^3.8.3",
+        "tsx": "^4.0.0",
+        "typescript": "^6.0.3",
+        "typescript-eslint": "^8.60.0"
+    }
+}

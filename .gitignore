@@ -1,0 +1,7 @@
+node_modules/
+dist/
+bundle/
+releases/
+sea-config.json
+.env
+.env.local

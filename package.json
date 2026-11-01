@@ -30,17 +30,17 @@
     },
     "devDependencies": {
         "@types/jest": "^30.0.0",
-        "@types/node": "^24.0.0",
+        "@types/node": "^26.6.6",
         "@types/ws": "^8.18.2",
         "esbuild": "^0.28.2",
         "eslint": "^10.13.0",
         "eslint-config-prettier": "^10.1.8",
         "jest": "^30.5.2",
         "postject": "1.0.0-alpha.6",
-        "prettier": "^3.8.3",
+        "prettier": "^3.9.10",
         "ts-jest": "^29.4.15",
         "tsx": "4.23.15",
-        "typescript": "^6.0.3",
+        "typescript": "^7.0.2",
         "typescript-eslint": "^8.72.0"
     },
     "jest": {

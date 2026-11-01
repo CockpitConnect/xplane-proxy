@@ -74,20 +74,36 @@ $env:PROXY_PORT  = "9000"
 
 ## Building from source
 
-Node.js 24 or later is required.
+Node.js 24 or later and pnpm (via `corepack enable`) are required.
 
 ```sh
-npm install
-node build-sea.mjs
+pnpm install
+pnpm build:exe
 ```
 
-Binaries are written to `releases/`. The build script downloads the Node runtime for each target platform and produces self-contained executables using [Node.js SEA](https://nodejs.org/api/single-executable-applications.html).
+Binaries are written to `releases/`. The build script downloads the Node runtime for each target platform and produces self-contained executables using [Node.js SEA](https://nodejs.org/api/single-executable-applications.html), with [postject](https://github.com/nodejs/postject) injecting the bundled app into each runtime.
 
 For development with live TypeScript:
 
 ```sh
-npm run dev
+pnpm dev
 ```
+
+Checks run by CI on every pull request:
+
+```sh
+pnpm build        # type-check
+pnpm lint
+pnpm format:check
+pnpm test
+```
+
+## Releasing
+
+1. Bump `version` in `package.json` and merge to `main`.
+2. Tag the merge commit and push the tag: `git tag v1.2.0 && git push origin v1.2.0`.
+
+The Release workflow builds the three binaries and publishes them as a GitHub Release. Keep the asset file names unchanged: downloads link to `releases/latest/download/<file>`.
 
 ## License
 

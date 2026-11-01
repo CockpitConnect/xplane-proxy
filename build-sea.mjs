@@ -1,6 +1,7 @@
 import { execSync } from 'node:child_process';
 import { createWriteStream, copyFileSync, chmodSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
-import { get } from 'node:https';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -86,25 +87,26 @@ const PLATFORMS = [
     },
 ];
 
-function download(url, dest) {
-    return new Promise((resolve, reject) => {
-        const file = createWriteStream(dest);
-        const go = (resolvedUrl) => {
-            get(resolvedUrl, (res) => {
-                if (res.statusCode === 301 || res.statusCode === 302) {
-                    return go(res.headers.location);
-                }
-                if (res.statusCode !== 200) {
-                    reject(new Error(`HTTP ${res.statusCode} for ${resolvedUrl}`));
-                    return;
-                }
-                res.pipe(file);
-                file.on('finish', () => file.close(resolve));
-                file.on('error', reject);
-            }).on('error', reject);
-        };
-        go(url);
-    });
+// nodejs.org drops connections now and then (ECONNRESET mid-download): retry with backoff
+// rather than failing the whole release build on one flaky download.
+async function download(url, dest, attempts = 5) {
+    for (let attempt = 1; ; attempt++) {
+        try {
+            const res = await fetch(url);
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status} for ${url}`);
+            }
+            await pipeline(Readable.fromWeb(res.body), createWriteStream(dest));
+            return;
+        } catch (err) {
+            if (attempt >= attempts) {
+                throw err;
+            }
+            const delayMs = 2 ** attempt * 1000;
+            console.warn(`  Download failed (${err.cause?.code ?? err.code ?? err.message}), retry ${attempt}/${attempts - 1} in ${delayMs / 1000}s...`);
+            await new Promise((r) => setTimeout(r, delayMs));
+        }
+    }
 }
 
 mkdirSync('bundle', { recursive: true });
@@ -151,4 +153,4 @@ for (const plat of PLATFORMS) {
     console.log(`  ✓ ${plat.output}`);
 }
 
-console.log('\nAll binaries built successfully.');
+console.log('\nAll SEA binaries built successfully.');

@@ -5,3 +5,5 @@ releases/
 sea-config.json
 .env
 .env.local
+.idea/
+coverage/

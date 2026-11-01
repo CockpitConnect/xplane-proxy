@@ -7,6 +7,13 @@ updates:
     groups:
       dev-dependencies:
         dependency-type: development
+    ignore:
+      # typescript-eslint does not support TypeScript 7 yet (typescript-eslint#10940).
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      # The binaries run on Node 24 (NODE_VERSION in build-sea.mjs); keep the types in step.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:

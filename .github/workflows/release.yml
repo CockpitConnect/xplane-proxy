@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           # Keep in step with NODE_VERSION in build-sea.mjs: the SEA blob is built by this
           # Node and injected into that one.

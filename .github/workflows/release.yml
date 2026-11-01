@@ -1,0 +1,46 @@
+name: Release
+
+# Push a tag like v1.1.0 to build the binaries and publish a GitHub Release.
+# The asset file names are a contract: the CockpitConnect app and website link to
+# releases/latest/download/<file>, so never rename them.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          # Keep in step with NODE_VERSION in build-sea.mjs: the SEA blob is built by this
+          # Node and injected into that one.
+          node-version: 24.15.0
+          cache: pnpm
+      - name: Check the tag matches package.json
+        run: |
+          version="$(node -p 'require("./package.json").version')"
+          if [ "v${version}" != "${GITHUB_REF_NAME}" ]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match package.json version ${version}" >&2
+            exit 1
+          fi
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm lint
+      - run: pnpm test:ci
+      - run: pnpm build:exe
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes \
+            releases/xplane-proxy-win-x64.exe \
+            releases/xplane-proxy-linux-x64 \
+            releases/xplane-proxy-linux-arm64

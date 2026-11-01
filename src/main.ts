@@ -1,71 +1,11 @@
 import http from "node:http";
-import { WebSocketServer, WebSocket } from "ws";
+import WebSocket, { WebSocketServer } from "ws";
+import { log } from "./log";
+import { makeUpdateThrottle, logFromXPlane, logFromClient } from "./relayLogger";
 
 const XPLANE_HOST = process.env.XPLANE_HOST ?? "127.0.0.1";
 const XPLANE_PORT = parseInt(process.env.XPLANE_PORT ?? "8086", 10);
 const PROXY_PORT = parseInt(process.env.PROXY_PORT ?? "8087", 10);
-
-function log(msg: string) {
-    console.log(`[${new Date().toISOString()}] ${msg}`);
-}
-
-function tryParse(data: WebSocket.RawData): unknown {
-    try {
-        return JSON.parse(data.toString());
-    } catch {
-        return null;
-    }
-}
-
-// Dataref updates arrive at simulator frequency (~20 Hz). Log the first one
-// immediately, then emit a rolling summary every 10 s so the console stays readable.
-function makeUpdateThrottle() {
-    let count = 0;
-    let timer: NodeJS.Timeout | null = null;
-
-    return function record(keyCount: number) {
-        count += keyCount;
-        if (timer === null) {
-            log(`→ Client: dataref_update_values (${keyCount} key(s))`);
-            timer = setInterval(() => {
-                if (count > 0) {
-                    log(`→ Client: dataref_update_values — ${count} value(s) forwarded in last 10 s`);
-                    count = 0;
-                }
-            }, 10_000);
-        }
-    };
-}
-
-function logFromXPlane(data: WebSocket.RawData, recordUpdate: (keyCount: number) => void) {
-    const msg = tryParse(data);
-    if (!msg || typeof msg !== "object") {
-        return;
-    }
-    const { type } = msg as Record<string, unknown>;
-    if (type === "dataref_update_values") {
-        const keys = Object.keys((msg as any).data ?? {}).length;
-        recordUpdate(keys);
-    }
-}
-
-function logFromClient(data: WebSocket.RawData) {
-    const msg = tryParse(data);
-    if (!msg || typeof msg !== "object") {
-        return;
-    }
-    const { type, params } = msg as Record<string, unknown>;
-    if (type === "dataref_subscribe_values") {
-        const datarefs = (params as any)?.datarefs ?? [];
-        const ids = datarefs.map((d: any) => d.id).join(", ");
-        log(`→ X-Plane: dataref_subscribe_values — ${datarefs.length} dataref(s) [${ids}]`);
-    } else if (type === "command") {
-        log(`→ X-Plane: command — ${(params as any)?.command ?? "?"}`);
-    } else if (type === "dataref_set_values") {
-        const datarefs = (params as any)?.datarefs ?? [];
-        log(`→ X-Plane: dataref_set_values — ${datarefs.length} dataref(s)`);
-    }
-}
 
 const server = http.createServer((req, res) => {
     const options: http.RequestOptions = {
@@ -106,15 +46,15 @@ wss.on("connection", (client, req) => {
     // completes. Clients often send subscriptions immediately on their own open
     // event, which fires as soon as this proxy accepts the upgrade — before the
     // upstream handshake finishes. Without the buffer those messages are dropped
-    // and X-Plane never receives them.
+    // and X-Plane never receives the subscription.
     const pendingFromClient: Array<{ data: WebSocket.RawData; isBinary: boolean }> = [];
-    const recordUpdate = makeUpdateThrottle();
+    const recordUpdate = makeUpdateThrottle(log);
     log(`Client connected — opening ${wsUrl}`);
 
     upstream.on("open", () => {
         log("X-Plane WebSocket connected");
         for (const { data, isBinary } of pendingFromClient) {
-            logFromClient(data);
+            logFromClient(data, log);
             upstream.send(data, { binary: isBinary });
         }
         pendingFromClient.length = 0;
@@ -143,7 +83,7 @@ wss.on("connection", (client, req) => {
 
     client.on("message", (data, isBinary) => {
         if (upstream.readyState === WebSocket.OPEN) {
-            logFromClient(data);
+            logFromClient(data, log);
             upstream.send(data, { binary: isBinary });
         } else {
             pendingFromClient.push({ data, isBinary });

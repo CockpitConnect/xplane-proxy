@@ -1,33 +1,64 @@
 {
     "name": "xplane-proxy",
-    "version": "1.0.0",
+    "version": "1.1.0",
+    "private": true,
     "description": "Expose X-Plane's local-only WebSocket API on your local network so any machine can connect to it",
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "https://gitlab.com/cockpitconnect/xplane-proxy.git"
+        "url": "https://github.com/cockpitconnect/xplane-proxy.git"
+    },
+    "packageManager": "pnpm@11.25.0",
+    "engines": {
+        "node": ">=24"
     },
     "scripts": {
         "dev": "tsx src/main.ts",
+        "build": "tsc --noEmit",
         "build:exe": "node build-sea.mjs",
+        "build:exe:local": "node build-sea.mjs --env=local",
         "lint": "eslint src",
         "lint:fix": "eslint src --fix",
         "format": "prettier --write src",
-        "format:check": "prettier --check src"
+        "format:check": "prettier --check src",
+        "test": "jest",
+        "test:watch": "jest --watch",
+        "test:ci": "jest --ci --runInBand"
     },
     "dependencies": {
-        "ws": "^8.20.1"
+        "ws": "^8.22.0"
     },
     "devDependencies": {
-        "@types/node": "^25.9.1",
-        "@types/ws": "^8.18.1",
-        "esbuild": "^0.25.0",
-        "eslint": "^10.4.0",
+        "@types/jest": "^30.0.0",
+        "@types/node": "^24.0.0",
+        "@types/ws": "^8.18.2",
+        "esbuild": "^0.28.2",
+        "eslint": "^10.13.0",
         "eslint-config-prettier": "^10.1.8",
+        "jest": "^30.5.2",
         "postject": "1.0.0-alpha.6",
         "prettier": "^3.8.3",
-        "tsx": "^4.0.0",
+        "ts-jest": "^29.4.15",
+        "tsx": "4.23.15",
         "typescript": "^6.0.3",
-        "typescript-eslint": "^8.60.0"
+        "typescript-eslint": "^8.72.0"
+    },
+    "jest": {
+        "moduleFileExtensions": ["js", "json", "ts"],
+        "rootDir": "src",
+        "testRegex": ".*\\.spec\\.ts$",
+        "transform": {
+            "^.+\\.ts$": [
+                "ts-jest",
+                {
+                    "tsconfig": {
+                        "module": "commonjs",
+                        "moduleResolution": "node",
+                        "types": ["jest", "node"]
+                    }
+                }
+            ]
+        },
+        "testEnvironment": "node"
     }
 }

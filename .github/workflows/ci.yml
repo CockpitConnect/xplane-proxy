@@ -4,6 +4,8 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Lets the release workflow run these same checks before it builds anything.
+  workflow_call:
 
 jobs:
   check:

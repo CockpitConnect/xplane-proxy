@@ -78,6 +78,22 @@ describe("logFromXPlane", () => {
         expect(recordUpdate).not.toHaveBeenCalled();
     });
 
+    it("records zero keys when the update has no data field", () => {
+        const recordUpdate = jest.fn();
+
+        logFromXPlane(rawData({ type: "dataref_update_values" }), recordUpdate);
+
+        expect(recordUpdate).toHaveBeenCalledWith(0);
+    });
+
+    it.each([["null"], ["42"], ['"a string"']])("ignores non-object JSON (%s)", (json) => {
+        const recordUpdate = jest.fn();
+
+        logFromXPlane(rawData(json), recordUpdate);
+
+        expect(recordUpdate).not.toHaveBeenCalled();
+    });
+
     it("ignores unparseable data", () => {
         const recordUpdate = jest.fn();
 
@@ -129,6 +145,23 @@ describe("logFromClient", () => {
         );
 
         expect(log).toHaveBeenCalledWith("→ X-Plane: dataref_set_values — 3 dataref(s)");
+    });
+
+    it("logs zero datarefs when a subscription has no params", () => {
+        const log = jest.fn();
+
+        logFromClient(rawData({ type: "dataref_subscribe_values" }), log);
+
+        expect(log).toHaveBeenCalledWith("→ X-Plane: dataref_subscribe_values — 0 dataref(s) []");
+    });
+
+    it("ignores non-object JSON", () => {
+        const log = jest.fn();
+
+        logFromClient(rawData("null"), log);
+        logFromClient(rawData("42"), log);
+
+        expect(log).not.toHaveBeenCalled();
     });
 
     it("ignores unrelated message types", () => {

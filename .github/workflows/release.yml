@@ -11,7 +11,14 @@ permissions:
   contents: write
 
 jobs:
+  check:
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
   release:
+    # Only build and publish once type-check, lint, format and tests have all passed.
+    needs: check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -30,9 +37,6 @@ jobs:
             exit 1
           fi
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - run: pnpm lint
-      - run: pnpm test:ci
       - run: pnpm build:exe
       - name: Publish release
         env:

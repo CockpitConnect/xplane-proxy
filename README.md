@@ -98,13 +98,6 @@ pnpm format:check
 pnpm test
 ```
 
-## Releasing
-
-1. Bump `version` in `package.json` and merge to `main`.
-2. Tag the merge commit and push the tag: `git tag v1.2.0 && git push origin v1.2.0`.
-
-The Release workflow builds the three binaries and publishes them as a GitHub Release. Keep the asset file names unchanged: downloads link to `releases/latest/download/<file>`.
-
 ## License
 
 MIT
